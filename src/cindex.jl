@@ -37,12 +37,12 @@ include("cindex/base.jl")
 #   flags:              Bitwise OR of TranslationUnitFlags
 #
 function parse_header(header::String;
-                index                           = None,
-                diagnostics::Bool               = false,
-                cplusplus::Bool                 = false,
-                args                            = ASCIIString[""],
-                includes                        = ASCIIString[],
-                flags                           = TranslationUnit_Flags.None)
+                      index             = None,
+                      diagnostics::Bool = false,
+                      cplusplus::Bool   = false,
+                      args              = ASCIIString[""],
+                      includes          = ASCIIString[],
+                      flags             = TranslationUnit_Flags.None)
     if (index == None)
         index = idx_create(0, (diagnostics ? 1 : 0))
     end
@@ -78,16 +78,16 @@ function search(cl::CursorList, ismatch::Function)
     end
     ret
 end
-search(cu::CLCursor, ismatch::Function) = search(children(cu), ismatch)
 search(cu::CLCursor, T::DataType) = search(cu, x->isa(x, T))
+search(cu::CLCursor, ismatch::Function) = search(children(cu), ismatch)
 search(cu::CLCursor, name::ASCIIString) = search(cu, x->(cindex.spelling(x) == name))
 
 ###############################################################################
 # Extended search function
-# Returns a Dict{ DataType => CLCursor
+# Returns a Dict{DataType => CLCursor}
 
 function matchchildren(cu::CLCursor, types::Array{DataType,1})
-    ret = { t => CLCursor[] for t in types}
+    ret = {t => CLCursor[] for t in types}
     for child in children(cu)
         for t in types
             isa(child, t) && push!(ret[t], child)
@@ -101,12 +101,12 @@ end
 # TODO: macro version should be more efficient.
 anymatch(first, args...) = any({==(first, a) for a in args})
 
-cu_type(c::CLCursor) = getCursorType(c)
-ty_kind(c::CLType) = convert(Int, c.data[1].kind)
-name(c::CLCursor) = getCursorDisplayName(c)
-spelling(c::CLType) = getTypeKindSpelling(convert(Int32, ty_kind(c)))
+cu_type(c::CLCursor)  = getCursorType(c)
+ty_kind(c::CLType)    = convert(Int, c.data[1].kind)
+name(c::CLCursor)     = getCursorDisplayName(c)
+spelling(c::CLType)   = getTypeKindSpelling(convert(Int32, ty_kind(c)))
 spelling(c::CLCursor) = getCursorSpelling(c)
-is_null(c::CLCursor) = (Cursor_isNull(c) != 0)
+is_null(c::CLCursor)  = (Cursor_isNull(c) != 0)
 
 function resolve_type(rt::CLType)
     # This helper attempts to work around some limitations of the
@@ -135,7 +135,9 @@ return_type(c::CLCursor) = return_type(c, true)
 function pointee_type(t::Pointer)
     return cindex.getPointeeType(t)
 end
-pointee_type(cu::CLCursor) = error("pointee_type(CLCursor) is discontinued, please use pointee_type(cindex.cu_type(cu))")
+pointee_type(cu::CLCursor) = 
+        error("pointee_type(CLCursor) is discontinued, " *
+              "please use pointee_type(cindex.cu_type(cu))")
 
 function typedef_type(c::TypedefDecl)
     t = cindex.getTypedefDeclUnderlyingType(c)
@@ -162,36 +164,42 @@ function getindex(cl::CursorList, clid::Int, default::UnionType)
         return default
     end
 end
+
 function getindex(cl::CursorList, clid::Int)
-    if (clid < 1 || clid > cl.size) error("Index out of range or empty list") end 
+    if (clid < 1 || clid > cl.size)
+        error("Index out of range or empty list")
+    end 
     cu = TmpCursor()
-    ccall( (:wci_getCLCursor, libwci),
-        Void,
-        (Ptr{Void}, Ptr{Void}, Int), cu.data, cl.ptr, clid-1)
+    ccall((:wci_getCLCursor, libwci),
+          Void,
+          (Ptr{Void}, Ptr{Void}, Int),
+          cu.data, cl.ptr, clid-1)
     return CXCursor(cu)
 end
 
 function children(cu::CLCursor)
     cl = cl_create() 
-    ccall( (:wci_getChildren, libwci),
-        Ptr{Void},
-            (Ptr{CXCursor}, Ptr{Void}), cu.data, cl.ptr)
+    ccall((:wci_getChildren, libwci),
+          Ptr{Void},
+          (Ptr{CXCursor}, Ptr{Void}),
+          cu.data, cl.ptr)
     size = cl_size(cl.ptr)
     return CursorList(cl.ptr,size)
 end
 
 function cu_file(cu::CLCursor)
     str = CXString()
-    ccall( (:wci_getCursorFile, libwci),
-        Void,
-            (Ptr{Void}, Ptr{Void}), cu.data, str.data)
+    ccall((:wci_getCursorFile, libwci),
+          Void,
+          (Ptr{Void}, Ptr{Void}),
+          cu.data, str.data)
     return get_string(str)
 end
 
-start(cl::CursorList) = 1
+start(cl::CursorList)   = 1
 done(cl::CursorList, i) = (i > cl.size)
 next(cl::CursorList, i) = (cl[i], i+1)
-length(cl::CursorList) = cl.size
+length(cl::CursorList)  = cl.size
 
 ################################################################################
 # Tokenizer access
@@ -204,14 +212,16 @@ function tokenize(cursor::CLCursor)
     return cindex.tokenize(tu, sourcerange)
 end
 
-start(tl::TokenList) = 1
+start(tl::TokenList)   = 1
 done(tl::TokenList, i) = (i > tl.size)
 next(tl::TokenList, i) = (tl[i], i+1)
-endof(tl::TokenList) = tl.size
-length(tl::TokenList) = tl.size
+endof(tl::TokenList)   = tl.size
+length(tl::TokenList)  = tl.size
 
 function getindex(tl::TokenList, i::Int)
-    if (i < 1 || i > tl.size) throw(BoundsError()) end
+    if (i < 1 || i > tl.size)
+        throw(BoundsError())
+    end
 
     c = CXToken(unsafe_load(tl.ptr, i))
     kind = c.data[1].int_data1
@@ -237,7 +247,8 @@ end
 # Retrieve function arguments for a given cursor
 function function_args(cursor::Union(FunctionDecl, CXXMethod))
     cursor_type = cindex.cu_type(cursor)
-    [cindex.getArgType(cursor_type, uint32(arg_i)) for arg_i in 0:cindex.getNumArgTypes(cursor_type)-1]
+    nargs = cindex.getNumArgTypes(cursor_type)
+    [cindex.getArgType(cursor_type, uint32(arg_idx)) for arg_idx in 0:nargs-1]
 end
 
 ################################################################################
@@ -246,7 +257,7 @@ end
 
 show(io::IO, tk::CLToken)   = print(io, typeof(tk), "(\"", tk.text, "\")")
 show(io::IO, ty::CLType)    = print(io, "CLType (", typeof(ty), ") ")
-show(io::IO, cu::CLCursor)    = print(io, "CLCursor (", typeof(cu), ") ", name(cu))
+show(io::IO, cu::CLCursor)  = print(io, "CLCursor (", typeof(cu), ") ", name(cu))
 
 ###############################################################################
 # Internal functions
@@ -260,7 +271,10 @@ function tu_init(hdrfile::Any, diagnostics, cpp::Bool, opts::Int)
 end
 
 
-tu_dispose(tu::CXTranslationUnit) = ccall( (:clang_disposeTranslationUnit, "libclang"), Void, (Ptr{Void},), tu)
+tu_dispose(tu::CXTranslationUnit) = ccall((:clang_disposeTranslationUnit, "libclang"),
+                                          Void, 
+                                          (Ptr{Void},), 
+                                          tu)
 
 function tu_cursor(tu::CXTranslationUnit)
     if (tu == C_NULL)
@@ -270,46 +284,48 @@ function tu_cursor(tu::CXTranslationUnit)
 end
  
 tu_parse(CXIndex, source_filename::ASCIIString, 
-                 cl_args::Array{ASCIIString,1}, num_clargs,
-                 unsaved_files::CXUnsavedFile, num_unsaved_files,
-                 options) =
-    ccall( (:clang_parseTranslationUnit, "libclang"),
-        CXTranslationUnit,
-        (Ptr{Void}, Ptr{Uint8}, Ptr{Ptr{Uint8}}, Uint32, Ptr{Void}, Uint32, Uint32), 
-            CXIndex, source_filename,
-            cl_args, num_clargs,
-            unsaved_files, num_unsaved_files, options)
+         cl_args::Array{ASCIIString,1}, num_clargs,
+         unsaved_files::CXUnsavedFile, num_unsaved_files, 
+         options) = 
+    ccall((:clang_parseTranslationUnit, "libclang"),
+          CXTranslationUnit,
+          (Ptr{Void}, Ptr{Uint8}, Ptr{Ptr{Uint8}}, Uint32, Ptr{Void}, Uint32, Uint32), 
+          CXIndex, source_filename, cl_args, num_clargs,
+          unsaved_files, num_unsaved_files, options)
 
 idx_create() = idx_create(0,0)
 idx_create(excludeDeclsFromPCH::Int, displayDiagnostics::Int) =
-    ccall( (:clang_createIndex, "libclang"),
-        CXTranslationUnit,
-        (Int32, Int32),
-        excludeDeclsFromPCH, displayDiagnostics)
+    ccall((:clang_createIndex, "libclang"),
+          CXTranslationUnit,
+          (Int32, Int32),
+          excludeDeclsFromPCH, displayDiagnostics)
 
 #Typedef{"Pointer CXFile"} clang_getFile(CXTranslationUnit, const char *)
 getFile(tu::CXTranslationUnit, file::ASCIIString) = 
-    ccall( (:clang_getFile, "libclang"),
-        CXFile,
-        (Ptr{Void}, Ptr{Uint8}), tu, file)
+    ccall((:clang_getFile, "libclang"),
+          CXFile,
+          (Ptr{Void}, Ptr{Uint8}),
+          tu, file)
 
 function cl_create()
-    ptr = ccall( (:wci_createCursorList, libwci),
-        Ptr{Void},
-        () )
+    ptr = ccall((:wci_createCursorList, libwci),
+                Ptr{Void},
+                ())
     return CursorList(ptr,0)
 end
 
 function cl_dispose(cl::CursorList)
-    ccall( (:wci_disposeCursorList, libwci),
-        None,
-        (Ptr{Void},), cl.ptr)
+    ccall((:wci_disposeCursorList, libwci),
+          None,
+          (Ptr{Void},),
+          cl.ptr)
 end
 
 cl_size(cl::CursorList) = cl.size
 cl_size(clptr::Ptr{Void}) =
-    ccall( (:wci_sizeofCursorList, libwci),
-        Int,
-        (Ptr{Void},), clptr)
+    ccall((:wci_sizeofCursorList, libwci),
+          Int,
+          (Ptr{Void},),
+          clptr)
 
 end # module
