@@ -2,7 +2,7 @@
 
 export CLType, CLCursor
 
-export # TypeKind 
+export # TypeKind
     Invalid,
     Unexposed,
     VoidType,
@@ -264,8 +264,7 @@ immutable _CXTUResourceUsage
 end
 
 # Generate container types
-for st in Any[
-        :CXSourceLocation, :CXSourceRange,
+for st in Any[:CXSourceLocation, :CXSourceRange,
         :CXTUResourceUsageEntry, :CXTUResourceUsage ]
     sz_name = symbol(string(st,"_size"))
     st_base = symbol(string("_", st))
@@ -301,7 +300,7 @@ immutable CursorList
 end
 
 function get_string(cx::CXString)
-    p::Ptr{Uint8} = ccall( (:wci_getCString, libwci), 
+    p::Ptr{Uint8} = ccall( (:wci_getCString, libwci),
         Ptr{Uint8}, (Ptr{Void},), cx.data)
     if (p == C_NULL)
         return ""

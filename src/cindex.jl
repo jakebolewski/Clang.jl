@@ -65,7 +65,7 @@ function parse_header(header::String;
     if (tu == C_NULL)
         error("ParseTranslationUnit returned NULL; unable to create TranslationUnit")
     end
-    
+
     return tu_cursor(tu)
 end
 
@@ -170,7 +170,7 @@ function getindex(cl::CursorList, clid::Int, default::UnionType)
     end
 end
 function getindex(cl::CursorList, clid::Int)
-    if (clid < 1 || clid > cl.size) error("Index out of range or empty list") end 
+    if (clid < 1 || clid > cl.size) error("Index out of range or empty list") end
     cu = TmpCursor()
     ccall( (:wci_getCLCursor, libwci),
             Void,
@@ -180,7 +180,7 @@ function getindex(cl::CursorList, clid::Int)
 end
 
 function children(cu::CLCursor)
-    cl = cl_create() 
+    cl = cl_create()
     ccall(  (:wci_getChildren, libwci),
             Ptr{Void},
             (Ptr{CXCursor}, Ptr{Void}),
@@ -251,7 +251,7 @@ end
 
 
 #returns a tuple with the default argument values for a C++ function
-#only seems to work if cplusplus=true in parse_header 
+#only seems to work if cplusplus=true in parse_header
 function function_arg_defaults(method::Union(cindex.CXXMethod, cindex.FunctionDecl, cindex.Constructor))
     defvals = Any[]
     for c in children(method)
@@ -269,7 +269,7 @@ function function_arg_defaults(method::Union(cindex.CXXMethod, cindex.FunctionDe
                 end
                 n += 1
             end
-           
+
             ts = collect(toks)
 
             #default value is the one after '='
@@ -307,7 +307,7 @@ end
 function function_arg_modifiers(p::ParmDecl)
     modifs = cindex.Keyword[]
     for tok in tokenize(p)
-        
+
         #only read keywords
         isa(tok, cindex.Keyword) || continue
 
@@ -350,9 +350,9 @@ function tu_cursor(tu::CXTranslationUnit)
     end
     getTranslationUnitCursor(tu)
 end
- 
+
 function tu_parse(CXIndex,
-                  source_filename::ASCIIString, 
+                  source_filename::ASCIIString,
                   cl_args::Array{ASCIIString,1},
                   num_clargs,
                   unsaved_files::CXUnsavedFile,
@@ -361,7 +361,7 @@ function tu_parse(CXIndex,
 
     ccall(  (:clang_parseTranslationUnit, "libclang"),
             CXTranslationUnit,
-            (Ptr{Void}, Ptr{Uint8}, Ptr{Ptr{Uint8}}, Uint32, Ptr{Void}, Uint32, Uint32), 
+            (Ptr{Void}, Ptr{Uint8}, Ptr{Ptr{Uint8}}, Uint32, Ptr{Void}, Uint32, Uint32),
                 CXIndex,
                 source_filename,
                 cl_args,

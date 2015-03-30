@@ -64,10 +64,10 @@ end
 function to_c(io::IOStream, rtype, fname, args)
   c_ret = is_struct(rtype) ? "void " : c_types[rtype]
   c_args = map(x->ref(c_types,x), is_struct(rtype) ? flatten(args,{rtype}) : args )
-  
+
   named_args = { Arg("a$i", a) for (i,a) in enumerate(c_args) }
   declargs = join( [x.ctype*" "*x.cname*"," for x in named_args])[1:end-1]
-  
+
   println(io, "$c_ret wci_$fname($declargs) {")
 
   cl_args = {}
@@ -80,7 +80,7 @@ function to_c(io::IOStream, rtype, fname, args)
     end
   end
   cl_fargs = join( ["$a," for a in cl_args])[1:end-1]
-  
+
   if is_struct(rtype)
     println(io, "  $rtype rx = clang_$fname($cl_fargs);")
     println(io, "  wci_save_$rtype(rx,a", string(length(args)+1), ");")
@@ -128,10 +128,10 @@ function write_output()
   flush(c_bfr)
   seek(jl_bfr,0)
   seek(c_bfr,0)
-  
+
   # Write Julia wrapper functions
   f_base = open("../src/cindex_base.jl", "w")
-  
+
   for line in EachLine(jl_bfr)
     print(f_base, line)
   end
@@ -148,7 +148,7 @@ end
 
 macro cx(rtype, fname, args)
   r,f,a = eval(rtype),string(fname),eval(args)
-  to_c(c_bfr, r, f, a) 
+  to_c(c_bfr, r, f, a)
   to_jl(jl_bfr, r,f,a)
 end
 
@@ -169,14 +169,14 @@ end
 #TODO: enable
   #298 UInt clang_isFileMultipleIncludeGuarded(CXTranslationUnit, CXFile)
   #@cx Uint32 isFileMultipleIncludeGuarded {CXTranslationUnit, CXFile}
-  
+
     #299 Typedef{"Pointer CXFile"} clang_getFile(CXTranslationUnit, const char *)
 
 #304 Typedef{"Record CXSourceLocation"} clang_getNullLocation()
 @cx CXSourceLocation getNullLocation {}
 #305 UInt clang_equalLocations(CXSourceLocation, CXSourceLocation)
 @cx Uint32 equalLocations {CXSourceLocation, CXSourceLocation}
-  
+
     #306 Typedef{"Record CXSourceLocation"} clang_getLocation(CXTranslationUnit, CXFile, unsigned int, unsigned int)
     #307 Typedef{"Record CXSourceLocation"} clang_getLocationForOffset(CXTranslationUnit, CXFile, unsigned int)
 
@@ -220,7 +220,7 @@ end
     #344 Typedef{"Record CXString"} clang_getDiagnosticFixIt(CXDiagnostic, unsigned int, CXSourceRange *)
     #345 Typedef{"Record CXString"} clang_getTranslationUnitSpelling(CXTranslationUnit)
     #346 Typedef{"Pointer CXTranslationUnit"} clang_createTranslationUnitFromSourceFile(CXIndex, const char *, int, const char *const *, unsigned int, struct CXUnsavedFile *)
-# TODO: enable here, move all to jl  
+# TODO: enable here, move all to jl
   #347 Typedef{"Pointer CXTranslationUnit"} clang_createTranslationUnit(CXIndex, const char *)
   #349 UInt clang_defaultEditingTranslationUnitOptions()
   #350 Typedef{"Pointer CXTranslationUnit"} clang_parseTranslationUnit(CXIndex, const char *, const char *const *, int, struct CXUnsavedFile *, unsigned int, unsigned int)
@@ -250,7 +250,7 @@ end
 @cx Uint32 isDeclaration {CXCursorKind}
 #377 UInt clang_isReference(enum CXCursorKind)
 @cx Uint32 isReference {CXCursorKind}
-    
+
     # these should be called directly...
     #378 UInt clang_isExpression(enum CXCursorKind)
     #379 UInt clang_isStatement(enum CXCursorKind)
@@ -270,7 +270,7 @@ end
   #390 Typedef{"Pointer CXTranslationUnit"} clang_Cursor_getTranslationUnit(CXCursor)
   #393 Typedef{"Pointer CXCursorSet"} clang_createCXCursorSet()
   #394 Void clang_disposeCXCursorSet(CXCursorSet)
-    
+
     # don't think this is useful...
     #395 UInt clang_CXCursorSet_contains(CXCursorSet, CXCursor)
     #396 UInt clang_CXCursorSet_insert(CXCursorSet, CXCursor)
@@ -286,7 +286,7 @@ end
   # maybes..
   #401 Typedef{"Pointer CXFile"} clang_getIncludedFile(CXCursor)
   #402 Typedef{"Record CXCursor"} clang_getCursor(CXTranslationUnit, CXSourceLocation)
-    
+
     # probably not
     #403 Typedef{"Record CXSourceLocation"} clang_getCursorLocation(CXCursor)
     #404 Typedef{"Record CXSourceRange"} clang_getCursorExtent(CXCursor)
@@ -359,7 +359,7 @@ end
     #444 UInt clang_visitChildren(CXCursor, CXCursorVisitor, CXClientData)
 #445 Typedef{"Record CXString"} clang_getCursorUSR(CXCursor)
 @cx CXString getCursorUSR {CXCursor}
-    
+
     #446 Typedef{"Record CXString"} clang_constructUSR_ObjCClass(const char *)
     #447 Typedef{"Record CXString"} clang_constructUSR_ObjCCategory(const char *, const char *)
     #448 Typedef{"Record CXString"} clang_constructUSR_ObjCProtocol(const char *)
@@ -398,7 +398,7 @@ end
     @cx Int32 getTokenKind {CXToken}
     #471 Typedef{"Record CXString"} clang_getTokenSpelling(CXTranslationUnit, CXToken)
     @cx CXString getTokenSpelling {CXTranslationUnit, CXToken}
-    
+
     #472 Typedef{"Record CXSourceLocation"} clang_getTokenLocation(CXTranslationUnit, CXToken)
     #473 Typedef{"Record CXSourceRange"} clang_getTokenExtent(CXTranslationUnit, CXToken)
     #474 Void clang_tokenize(CXTranslationUnit, CXSourceRange, CXToken **, unsigned int *)
@@ -409,7 +409,7 @@ end
 @cx CXString getCursorKindSpelling {CXCursorKind}
 
     #478 Void clang_getDefinitionSpellingAndExtent(CXCursor, const char **, const char **, unsigned int *, unsigned int *, unsigned int *, unsigned int *)
-  
+
   # these sound useful..
   #479 Void clang_enableStackTraces()
   #480 Void clang_executeOnThread(void (*)(void *), void *, unsigned int)
@@ -438,7 +438,7 @@ end
 
 #509 Typedef{"Record CXString"} clang_getClangVersion()
 @cx CXString getClangVersion {}
-  
+
   # TODO: useful?
   #510 Void clang_toggleCrashRecovery(unsigned int)
   #512 Void clang_getInclusions(CXTranslationUnit, CXInclusionVisitor, CXClientData)
@@ -448,7 +448,7 @@ end
     #516 UInt clang_remap_getNumFiles(CXRemapping)
     #517 Void clang_remap_getFilenames(CXRemapping, unsigned int, CXString *, CXString *)
     #518 Void clang_remap_dispose(CXRemapping)
-  
+
   # TODO: useful?
   #522 Void clang_findReferencesInFile(CXCursor, CXFile, CXCursorAndRangeVisitor)
 
