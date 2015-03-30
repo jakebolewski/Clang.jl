@@ -4,3 +4,4 @@
 *.swp
 *~
 *.kate-swp
+*.ipynb_checkpoints
